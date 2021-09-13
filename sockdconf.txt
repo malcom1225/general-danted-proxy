@@ -2,6 +2,9 @@
 internal: ens4 port = 6969
 # send out through... can be an IP or an interface
 external: ens4
+
+# for user auth run as this user
+user.privileged:   root
 # for user auth run as this user
 user.privileged:   root
 # otherwise run as this user
@@ -10,26 +13,54 @@ user.unprivileged: nobody
 socksmethod:       username
 # log to this file
 logoutput:         /var/log/sockd.log
-# Block all requests to localhost or current machine
-block { from: 0.0.0.0/0 to: lo log: connect }
-block { from: 0.0.0.0/0 to: eth0 log: connect }
-# allow everyone from everywhere so long as they auth, log errors
+
+# IPv4 and IPv6 need block/pass rules for their own. Can't specify IPv4 and IPv6 in one same rule.
+# By default, Danted will block everything outside of "pass" rules. But specify them explicitly won't hurt.
+
+# Block all requests to localhost and loopback (IPv4)
+socks block { from: 0.0.0.0/0 to: lo log: connect }
+socks block { from: 0.0.0.0/0 to: eth0 log: connect }
+
+# Block all requests to localhost and loopback (IPv6)
+socks block { from: ::/0 to: lo log: connect }
+socks block { from: ::/0 to: eth0 log: connect }
+
+# allow everyone from everywhere to connect to this proxy server so long as it's IPv4 and they auth, log errors
 client pass {
     from: 0.0.0.0/0 to: 0.0.0.0/0
     log: error # connect disconnect iooperation
     socksmethod: username
 }
-# allow everyone from everywhere so long as they auth, log errors
+
+# allow everyone from everywhere to connect to this proxy server so long as it's IPv6 and they auth, log errors
+client pass {
+    from: ::/0 to: ::/0
+    log: error # connect disconnect iooperation
+    socksmethod: username
+}
+
+# allow any `bind`, `connect` and `udpassociate` requests to anywhere so long as they auth and the destination is an IPv4 one
+# Logging errors
 socks pass {
     from: 0.0.0.0/0 to: 0.0.0.0/0
     command: bind connect udpassociate
     log: error # connect disconnect iooperation
     socksmethod: username
 }
+
+# allow any `bind`, `connect` and `udpassociate` requests to anywhere so long as they auth and the destination is an IPv6 one
+# Logging errors
+socks pass {
+    from: ::/0 to: ::/0
+    command: bind connect udpassociate
+    log: error # connect disconnect iooperation
+    socksmethod: username
+}
+
 # generic pass statement for incoming connections/packets
 # because something about no support for auth with bindreply udpreply ?
-socks pass {
-        from: 0.0.0.0/0 to: 0.0.0.0/0
-        command: bindreply udpreply
-        log: error # connect disconnect iooperation
-}
+# socks pass {
+#        from: 0.0.0.0/0 to: 0.0.0.0/0
+#        command: bindreply udpreply
+#        log: error # connect disconnect iooperation
+# }
