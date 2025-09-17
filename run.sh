@@ -1,6 +1,6 @@
 #! /bin/sh
 
-sudo apt-get update && sudo apt-get install make gcc g++
+sudo apt-get update && sudo apt-get install make gcc g++ -y
 
 sudo wget http://www.inet.no/dante/files/dante-1.4.3.tar.gz
 sudo tar xvfz dante-1.4.3.tar.gz
